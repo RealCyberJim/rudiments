@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dynamic Grid Overlay</title>
+  <style>
+    #parentcontainer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .domain-container {
+      border: 2px solid #333;
+      padding: 10px;
+      flex: 1 1 300px;
+      background: #f9f9f9;
+    }
+
+    .domain-title {
+      font-weight: bold;
+      font-size: 1.2em;
+      margin-bottom: 8px;
+    }
+
+    .subdomain {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 4px solid #666;
+      background: #eee;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dynamic Domain Grid</h1>
+  <div id="parentcontainer"></div>
+
+  <script>
+    // Load JSON files
+    async function loadJSON(filePath) {
+      const res = await fetch(filePath);
+      return await res.json();
+    }
+
+    async function drawGrid() {
+      const domainData = await loadJSON('data/domains.json');
+      const subdomainData = await loadJSON('data/subdomains.json');
+      const parent = document.getElementById('parentcontainer');
+
+      // Map domainId to its container
+      const domainContainers = {};
+
+      // Draw domains
+      domainData.forEach(domain => {
+        const domainDiv = document.createElement('div');
+        domainDiv.className = 'domain-container';
+        domainDiv.id = `domain-${domain.domainId}`;
+
+        const title = document.createElement('div');
+        title.className = 'domain-title';
+        title.textContent = `${domain.domainShortName} (${domain.domainId})`;
+
+        domainDiv.appendChild(title);
+        parent.appendChild(domainDiv);
+        domainContainers[domain.domainId] = domainDiv;
+      });
+
+      // Draw subdomains inside respective domains
+      subdomainData.forEach(sub => {
+        const container = domainContainers[sub.domainId];
+        if (container) {
+          const subDiv = document.createElement('div');
+          subDiv.className = 'subdomain';
+          subDiv.title = sub.tooltip;
+          subDiv.textContent = `${sub.subdomainShortName} (${sub.subdomainId})`;
+          container.appendChild(subDiv);
+        } else {
+          console.warn(`No domain container found for subdomain: ${sub.subdomainId}`);
+        }
+      });
+    }
+
+    drawGrid();
+  </script>
+</body>
+</html>
