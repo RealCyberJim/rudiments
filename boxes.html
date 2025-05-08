@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Dynamic Grid Overlay</title>
+  <title>Dynamic Domain Grid with Subdomain Positioning</title>
   <style>
     #parentcontainer {
       display: flex;
@@ -13,31 +13,45 @@
 
     .domain-container {
       border: 2px solid #333;
-      padding: 10px;
-      flex: 1 1 300px;
       background: #f9f9f9;
+      padding: 10px;
+      flex: 1 1 600px;
     }
 
     .domain-title {
       font-weight: bold;
       font-size: 1.2em;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+    }
+
+    .subdomain-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr); /* 12-column layout */
+      grid-auto-rows: 1.5em;
+      position: relative;
+      border: 1px dashed #bbb;
+      background: #fff;
+      padding: 5px;
     }
 
     .subdomain {
-      margin: 5px 0;
-      padding: 5px;
-      border-left: 4px solid #666;
-      background: #eee;
+      padding: 4px 6px;
+      font-size: 0.9em;
+      border-radius: 4px;
+      color: #000;
+      background: rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      border: 1px solid #ccc;
     }
   </style>
 </head>
 <body>
-  <h1>Dynamic Domain Grid</h1>
+  <h1>Dynamic Domain Grid with Subdomains</h1>
   <div id="parentcontainer"></div>
 
   <script>
-    // Load JSON files
     async function loadJSON(filePath) {
       const res = await fetch(filePath);
       return await res.json();
@@ -48,10 +62,9 @@
       const subdomainData = await loadJSON('data/subdomains.json');
       const parent = document.getElementById('parentcontainer');
 
-      // Map domainId to its container
       const domainContainers = {};
 
-      // Draw domains
+      // Create containers for each domain
       domainData.forEach(domain => {
         const domainDiv = document.createElement('div');
         domainDiv.className = 'domain-container';
@@ -61,22 +74,36 @@
         title.className = 'domain-title';
         title.textContent = `${domain.domainShortName} (${domain.domainId})`;
 
+        const grid = document.createElement('div');
+        grid.className = 'subdomain-grid';
+        grid.id = `grid-${domain.domainId}`;
+
         domainDiv.appendChild(title);
+        domainDiv.appendChild(grid);
         parent.appendChild(domainDiv);
-        domainContainers[domain.domainId] = domainDiv;
+
+        domainContainers[domain.domainId] = grid;
       });
 
-      // Draw subdomains inside respective domains
+      // Add subdomains with CSS grid positioning
       subdomainData.forEach(sub => {
-        const container = domainContainers[sub.domainId];
-        if (container) {
+        const grid = domainContainers[sub.domainId];
+        if (grid) {
           const subDiv = document.createElement('div');
           subDiv.className = 'subdomain';
           subDiv.title = sub.tooltip;
-          subDiv.textContent = `${sub.subdomainShortName} (${sub.subdomainId})`;
-          container.appendChild(subDiv);
+          subDiv.textContent = `${sub.subdomainShortName}`;
+
+          // Use grid placement based on metadata
+          subDiv.style.gridRow = `${sub.gridRowStart} / span ${sub.gridRowSpan}`;
+          subDiv.style.gridColumn = `${sub.gridColumnStart} / span ${sub.gridColumnSpan}`;
+
+          // Optional: background color via CSS var
+          subDiv.style.background = `var(${sub.subdomainColor}, rgba(0,0,0,0.1))`;
+
+          grid.appendChild(subDiv);
         } else {
-          console.warn(`No domain container found for subdomain: ${sub.subdomainId}`);
+          console.warn(`⚠️ No matching domain container found for: ${sub.subdomainId}`);
         }
       });
     }
