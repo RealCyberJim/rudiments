@@ -14,6 +14,7 @@
       margin: 0;
       background: white;
       font-family: sans-serif;
+      overflow-x: auto; /* ✅ Enables horizontal scrolling if grid is wider than viewport */
     }
 
     .parentcontainer {
@@ -21,6 +22,8 @@
       position: absolute;
       top: 4.8vmax;
       left: -0.31vmax;
+      width: 100vw;
+      box-sizing: border-box;
       grid-template-columns:
         [skill] 1.7vmax
         [NET] 2.3vmax 2.3vmax 2.3vmax .4vmax
@@ -34,6 +37,7 @@
       grid-template-rows: repeat(27, var(--tile-height));
       column-gap: var(--grid-gap);
       row-gap: var(--grid-gap);
+
     }
 
     .subdomain-container {
