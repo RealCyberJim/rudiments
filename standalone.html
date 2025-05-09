@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Certification Roadmap Grid</title>
+  <style>
+    :root {
+      --tile-width: 2.3vmax;
+      --tile-height: 1.5vmax;
+      --grid-gap: 0.1vmax;
+    }
+
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: white;
+    }
+
+    .parentcontainer {
+      display: grid;
+      position: absolute;
+      top: 4.8vmax;
+      left: -0.31vmax;
+      grid-template-columns:
+        [skill] 1.7vmax
+        [NET] 2.3vmax 2.3vmax 2.3vmax .4vmax
+        [IAM] 2.3vmax .4vmax
+        [ENG] 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 0.4vmax
+        [AST] 2.3vmax 2.3vmax 0.4vmax
+        [RSK] 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 0.4vmax
+        [TST] 2.3vmax 2.3vmax 2.3vmax 0.4vmax
+        [SOF] 2.3vmax 0.4vmax
+        [OPS] 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax 2.3vmax;
+      grid-template-rows: repeat(27, var(--tile-height));
+      column-gap: var(--grid-gap);
+      row-gap: var(--grid-gap);
+      padding: 0;
+    }
+
+    .domain-container {
+      border: 2px solid darkred;
+      display: contents;
+    }
+
+    .subdomain-container {
+      display: grid;
+      grid-auto-rows: var(--tile-height);
+      gap: var(--grid-gap);
+      border: 1px solid #999;
+    }
+
+    .subdomain-container[data-subdomain-id^="OPS_forensics"],
+    .subdomain-container[data-subdomain-id^="OPS_incidentHandling"] {
+      background-color: var(--opsbluelt, #d9eefe);
+    }
+
+    .subdomain-container[data-subdomain-id^="OPS_penTesting"],
+    .subdomain-container[data-subdomain-id^="OPS_exploitation"] {
+      background-color: var(--opslt, #fee0e0);
+    }
+
+    .direct-cert-container {
+      background: white;
+      display: grid;
+      grid-auto-rows: var(--tile-height);
+      gap: var(--grid-gap);
+    }
+
+    .cert-tile {
+      width: var(--tile-width);
+      height: var(--tile-height);
+      border: 1px solid #ccc;
+      background: #f0f0f0;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.5vmax;
+    }
+
+    .exception-layout {
+      outline: 2px dashed red; /* For debug visibility */
+    }
+  </style>
+</head>
+<body>
+  <div class="parentcontainer" id="parentcontainer"></div>
+  <script>
+    async function loadJSON(path) {
+      const res = await fetch(path);
+      return res.json();
+    }
+
+    function drawCertTile(cert) {
+      const tile = document.createElement('div');
+      tile.className = 'cert-tile';
+      tile.textContent = cert.name || cert.certId;
+      tile.dataset.domainId = cert.domainId;
+      return tile;
+    }
+
+    async function drawLayout() {
+      const domains = await loadJSON('data/domains.json');
+      const subdomains = await loadJSON('data/subdomains.json');
+      const certs = await loadJSON('data/certs.json');
+      const parent = document.getElementById('parentcontainer');
+
+      const domainContainers = {};
+      const subContainers = {};
+
+      // Pre-create domain container if it has any certs
+      domains.forEach(domain => {
+        const domainDiv = document.createElement('div');
+        domainDiv.className = 'domain-container';
+        domainDiv.dataset.domainId = domain.domainId;
+        parent.appendChild(domainDiv);
+        domainContainers[domain.domainId] = domainDiv;
+      });
+
+      // Create subdomain containers
+      subdomains.forEach(sub => {
+        const subDiv = document.createElement('div');
+        subDiv.className = 'subdomain-container';
+        subDiv.dataset.subdomainId = sub.subdomainId;
+        subDiv.dataset.domainId = sub.domainId;
+        subDiv.style.gridColumn = `${sub.gridColumnStart} / span ${sub.gridColumnSpan}`;
+        subDiv.style.gridRow = `${sub.gridRowStart} / span ${sub.gridRowSpan}`;
+        domainContainers[sub.domainId].appendChild(subDiv);
+        subContainers[sub.subdomainId] = subDiv;
+      });
+
+      // Draw cert tiles
+      certs.forEach(cert => {
+        const tile = drawCertTile(cert);
+        if (cert.subdomainId && subContainers[cert.subdomainId]) {
+          subContainers[cert.subdomainId].appendChild(tile);
+        } else if (domainContainers[cert.domainId]) {
+          let direct = domainContainers[cert.domainId].querySelector('.direct-cert-container');
+          if (!direct) {
+            direct = document.createElement('div');
+            direct.className = 'direct-cert-container';
+            direct.dataset.domainId = cert.domainId;
+            domainContainers[cert.domainId].appendChild(direct);
+          }
+          direct.appendChild(tile);
+        }
+      });
+    }
+
+    drawLayout();
+  </script>
+</body>
+</html>
