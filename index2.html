@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cybersecurity Certification Grid</title>
+    <style>
+        :root {
+            /* Domain Colors */
+            --net: #6baed6;
+            --netdk: #3182bd;
+            --netlt: #9ecae1;
+            --iam: #9e9ac8;
+            --iamdk: #756bb1;
+            --iamlt: #bcbddc;
+            --eng: #74c476;
+            --engdk: #31a354;
+            --englt: #a1d99b;
+            --ast: #fd8d3c;
+            --astdk: #e6550d;
+            --astlt: #fdae6b;
+            --rsk: #969696;
+            --rskdk: #636363;
+            --rsklt: #bdbdbd;
+            --tst: #8c564b;
+            --tstdk: #6b4746;
+            --tstlt: #a87f7e;
+            --sof: #e7ba52;
+            --sofdk: #bd9e39;
+            --soflt: #f2d392;
+            --ops: #e377c2;
+            --opsdk: #c51b8a;
+            --opslt: #f7b6d2;
+            --opsblue: #17becf;
+            --opsbluedk: #1f9eb9;
+            --opsbluelt: #9edae5;
+            
+            /* Other variables */
+            --grid-cell-height: 28px;
+            --grid-cell-width: 120px;
+            --grid-gap: 4px;
+                    // Check for duplicate certIds
+            const certIds = new Set();
+            certs.forEach(cert => {
+                if (certIds.has(cert.certId)) {
+                    console.error(`Duplicate certId found: ${cert.certId}`);
+                }
+                certIds.add(cert.certId);
+            });
+            
+            // Add isInSubdomain flag for certs if not present
+            certs.forEach(cert => {
+                if (cert.isInSubdomain === undefined) {
+                    cert.isInSubdomain = cert.subdomainId !== null && cert.subdomainId !== undefined;
+                }
+            });
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .grid-container {
+            display: grid;
+            gap: var(--grid-gap);
+            width: fit-content;
+            margin: 0 auto;
+            background-color: #eee;
+            padding: var(--grid-gap);
+            border-radius: 4px;
+            overflow: auto;
+            max-width: 100%;
+        }
+
+        .domain-container {
+            display: grid;
+            gap: var(--grid-gap);
+            position: relative;
+        }
+
+        .domain-title {
+            font-weight: bold;
+            text-align: center;
+            padding: 5px;
+            color: white;
+            border-radius: 4px 4px 0 0;
+            grid-column: 1 / -1;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .subdomain-container, .unspecialized-container {
+            display: grid;
+            gap: var(--grid-gap);
+            background-color: rgba(255, 255, 255, 0.5);
+            padding: var(--grid-gap);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .subdomain-title {
+            text-align: center;
+            padding: 2px;
+            font-size: 0.8rem;
+            border-radius: 2px;
+            margin-bottom: 4px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .cert-tile {
+            height: var(--grid-cell-height);
+            width: 100%;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .cert-tile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            z-index: 5;
+        }
+
+        .tooltip {
+            position: absolute;
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            max-width: 300px;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-weight: normal;
+            text-align: left;
+        }
+
+        .tooltip h4 {
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tooltip p {
+            margin-top: 5px;
+            font-size: 0.75rem;
+        }
+
+        .tooltip-visible {
+            opacity: 1;
+        }
+
+        .stratum-labels {
+            position: sticky;
+            left: 0;
+            display: grid;
+            gap: var(--grid-gap);
+            grid-template-rows: repeat(27, var(--grid-cell-height));
+        }
+
+        .stratum-label {
+            height: var(--grid-cell-height);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #666;
+            margin-right: 5px;
+        }
+
+        .main-container {
+            display: flex;
+        }
+
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border-radius: 4px;
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .filter-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #eee;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .filter-btn.active {
+            background-color: #333;
+            color: white;
+        }
+
+        .reset-btn {
+            padding: 5px 15px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .zoom-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .zoom-btn {
+            padding: 5px 10px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            :root {
+                --grid-cell-width: 90px;
+                --grid-cell-height: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Cybersecurity Certification Grid</h1>
+
+    <div class="controls">
+        <div class="filter-group">
+            <div class="filter-title">Domains</div>
+            <div class="filter-options" id="domain-filters">
+                <!-- Domain filters will be added here dynamically -->
+            </div>
+        </div>
+        <div class="filter-group">
+            <div class="filter-title">Skill Level</div>
+            <div class="filter-options" id="skill-filters">
+                <button class="filter-btn" data-filter="skill" data-value="entry">Entry (25-27)</button>
+                <button class="filter-btn" data-filter="skill" data-value="intermediate">Intermediate (17-24)</button>
+                <button class="filter-btn" data-filter="skill" data-value="advanced">Advanced (9-16)</button>
+                <button class="filter-btn" data-filter="skill" data-value="expert">Expert (2-8)</button>
+            </div>
+        </div>
+        <div class="filter-group">
+            <div class="filter-title">Team Role</div>
+            <div class="filter-options" id="team-filters">
+                <button class="filter-btn" data-filter="team" data-value="DefaultTeam">Default</button>
+                <button class="filter-btn" data-filter="team" data-value="RedTeam">Red Team</button>
+                <button class="filter-btn" data-filter="team" data-value="BlueTeam">Blue Team</button>
+            </div>
+        </div>
+        <div class="zoom-controls">
+            <button class="zoom-btn" id="zoom-out">-</button>
+            <span id="zoom-level">100%</span>
+            <button class="zoom-btn" id="zoom-in">+</button>
+        </div>
+        <button class="reset-btn" id="reset-filters">Reset Filters</button>
+    </div>
+
+    <div class="main-container">
+        <div class="stratum-labels" id="stratum-labels">
+            <!-- Stratum labels will be added here dynamically -->
+        </div>
+        <div class="grid-container" id="grid-container">
+            <div class="loading">Loading certification grid...</div>
+        </div>
+    </div>
+
+    <div class="legend" id="legend">
+        <!-- Legend items will be added here dynamically -->
+    </div>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <script>
+        // Global data storage
+        let domains = [];
+        let subdomains = [];
+        let unspecialized = [];
+        let certs = [];
+        
+        // Global state
+        const filters = {
+            domains: [],
+            skill: [],
+            team: []
+        };
+        
+        let zoomLevel = 100;
+        
+        // DOM Elements
+        const gridContainer = document.getElementById('grid-container');
+        const tooltip = document.getElementById('tooltip');
+        const stratumLabels = document.getElementById('stratum-labels');
+        const legend = document.getElementById('legend');
+        const domainFilters = document.getElementById('domain-filters');
+        const skillFilters = document.getElementById('skill-filters');
+        const teamFilters = document.getElementById('team-filters');
+        const resetFiltersBtn = document.getElementById('reset-filters');
+        const zoomInBtn = document.getElementById('zoom-in');
+        const zoomOutBtn = document.getElementById('zoom-out');
+        const zoomLevelDisplay = document.getElementById('zoom-level');
+        
+        // Helper functions
+        function getDomainColor(domainId, teamRole = 'DefaultTeam') {
+            const domain = domains.find(d => d.domainId === domainId);
+            if (!domain) return '--net';
+            
+            if (domain.teamRoles && domain.teamRoles[teamRole] && domain.teamRoles[teamRole].tileColor) {
+                return domain.teamRoles[teamRole].tileColor;
+            }
+            
+            return `--${domainId.toLowerCase()}`;
+        }
+        
+        function getDomainBorderColor(domainId, teamRole = 'DefaultTeam') {
+            const domain = domains.find(d => d.domainId === domainId);
+            if (!domain) return '--netdk';
+            
+            if (domain.teamRoles && domain.teamRoles[teamRole] && domain.teamRoles[teamRole].borderColor) {
+                return domain.teamRoles[teamRole].borderColor;
+            }
+            
+            return `--${domainId.toLowerCase()}dk`;
+        }
+        
+        function getSubdomainColor(subdomainId) {
+            const subdomain = subdomains.find(s => s.subdomainId === subdomainId);
+            return subdomain ? subdomain.subdomainColor : '--netlt';
+        }
+        
+        function fetchData() {
+            domains = [
+  {
+    "domainId": "NET",
+    "domainShortName": "Network & Communication",
+    "domainDisplayOrder": 1,
+    "gridColumnSpan": 3,
+    "domainDescription": "The communication and network security domain covers the ability to secure communication channels and networks. Topics include secure and converged protocols, wireless networks, cellular networks, hardware operation (warranty and redundant power) and third-party connectivity. IP networking (IPSec, IPv4 and IPv6) are also included in this domain.",
+    "teamRoles": {
+      "DefaultTeam": {}
+    }
+  },
+  {
+    "domainId": "IAM",
+    "domainShortName": "ID & Access",
+    "domainDisplayOrder": 2,
+    "gridColumnSpan": 1,
+    "domainDescription": "The identity and access management domain covers the attacks that target the human gateway to gain access to data. Other topics include ways to identify users with rights to access the information and servers. Identity and access management covers the topics of applications, Single sign-on authentication, privilege escalation, Kerberos, rule-based or risk-based access control, proofing and establishment of identity.",
+    "teamRoles": {
+      "DefaultTeam": {}
+    }
+  },
+  {
+    "domainId": "ENG",
+    "domainShortName": "Architecture & Engineering",
+    "domainDisplayOrder": 3,
+    "gridColumnSpan": 7,
+    "domainDescription": "The security architecture and engineering domain covers important topics concerning security engineering plans, designs, and principles. Topics include assessing and mitigating information system vulnerabilities, fundamental concepts of security models and security architectures in critical areas like access control. Cloud systems, cryptography, system infiltrations (ransomware, fault-injection and more) and virtualized systems are also covered in this domain.",
+    "teamRoles": {
+      "DefaultTeam": {}
+    }
+  },
+  {
+    "domainId": "AST",
+    "domainShortName": "Asset Security",
+    "domainDisplayOrder": 4,
+    "gridColumnSpan": 2,
+    "domainDescription": "The Asset Security domain deals with the issues related to the collection, storage, maintenance, retention and destruction of data. It also covers knowledge of different roles regarding data handling (owner, controller and custodian) as well as data protection methods and data states. Other topics include resource provision, asset classification and data lifecycle management.",
+    "teamRoles": {
+      "DefaultTeam": {}
+    }
+  },
+  {
+    "domainId": "RSK",
+    "domainShortName": "Security & Risk Management",
+    "domainDisplayOrder": 5,
+    "gridColumnSpan": 9,
+    "domainDescription": "The security and risk management domain covers general skills related to the implementation of user awareness programs as well as security procedures. Emphasis is also placed on risk management concerning the acquisition of new services, hardware and software (supply chain). Other skills include social engineering defense mechanisms.",
+    "teamRoles": {
+      "DefaultTeam": {}
+    }
+  },
+  {
+    "domainId": "TST",
+    "domainShortName": "Assessment & Testing",
+    "domainDisplayOrder": 6,
+    "gridColumnSpan": 3,
+    "domainDescription": "The security assessment and testing domain deals with all the techniques and tools used to find system vulnerabilities, weaknesses and potential areas of concern not addressed by security procedures and policies. Attack simulations, vulnerability assessment, compliance checks, and ethical disclosure also fall under this domain.",
+    "teamRoles": {
+      "DefaultTeam": {}
+    }
+  },
+  {
+    "domainId": "SOF",
+    "domainShortName": "Software",
+    "domainDisplayOrder": 7,
+    "gridColumnSpan": 1,
+    "domainDescription": "The software development security domain deals with implementing software-based security protocols within environments for which the IT professional is responsible. Risk analysis, vulnerability identification and auditing of source codes are all covered in this subset. Additional topics include software-designed security, maturity models, development methodologies, open-source and third-party development security.",
+    "teamRoles": {
+      "DefaultTeam": {}
+    }
+  },
+  {
+    "domainId": "OPS",
+    "domainShortName": "Security Operations",
+    "domainDisplayOrder": 8,
+    "gridColumnSpan": 13,
+    "domainDescription": "The security operations domain covers topics ranging from investigations and digital forensic to detection and intrusion prevention tools, sandboxing and firewalls. Topics include user and entity behavior analytics, threat intelligence (threat hunting and threat feeds) log management, artifacts (mobile, computer and network), machine learning and AI-based tools, penetration testing, and exploitation development.",
+    "teamRoles": {
+      "RedTeam": {
+        "tileColor": "--ops",
+        "borderColor": "--opsdk"
+      },
+      "BlueTeam": {
+        "tileColor": "--opsblue",
+        "borderColor": "--opsbluedk"
+      }
+    }
+  }
+];
+
+            subdomains = [
+  {
+    "subdomainId": "ENG_cloudSysOps",
+    "subdomainShortName": "Cloud/SysOps",
+    "subdomainLongName": "Cloud & System Operations",
+    "tooltip": "Security for cloud infrastructure, virtualization, cloud platforms, and systems operations including deployment pipelines and infrastructure-as-code.",
+    "domainId": "ENG",
+    "subdomainColor": "--englt",
+    "gridRowStart": 2,
+    "gridRowSpan": 26,
+    "gridColumnStart": 1,
+    "gridColumnSpan": 4
+  },
+  {
+    "subdomainId": "ENG_nix",
+    "subdomainShortName": "*nix",
+    "subdomainLongName": "Unix/Linux Systems",
+    "tooltip": "Security topics related to Unix, Linux, and other *nix-based operating systems, including hardening, access controls, and secure configurations.",
+    "domainId": "ENG",
+    "subdomainColor": "--englt",
+    "gridRowStart": 2,
+    "gridRowSpan": 26,
+    "gridColumnStart": 5,
+    "gridColumnSpan": 1
+  },
+  {
+    "subdomainId": "ENG_icsiot",
+    "subdomainShortName": "ICS/IoT",
+    "subdomainLongName": "Industrial Control Systems & Internet of Things",
+    "tooltip": "Focuses on securing industrial control systems (ICS), SCADA networks, and connected IoT devices against cyber threats and vulnerabilities.",
+    "domainId": "ENG",
+    "subdomainColor": "--englt",
+    "gridRowStart": 2,
+    "gridRowSpan": 26,
+    "gridColumnStart": 6,
+    "gridColumnSpan": 1
+  },
+  {
+    "subdomainId": "RSK_grc",
+    "subdomainShortName": "GRC",
+    "subdomainLongName": "Governance, Risk, and Compliance",
+    "tooltip": "Covers GRC frameworks, compliance requirements, security policy design, and risk management methodologies.",
+    "domainId": "RSK",
+    "subdomainColor": "--rsklt",
+    "gridRowStart": 2,
+    "gridRowSpan": 26,
+    "gridColumnStart": 4,
+    "gridColumnSpan": 4
+  },
+  {
+    "subdomainId": "OPS_forensics",
+    "subdomainShortName": "Forensics",
+    "subdomainLongName": "Digital Forensics",
+    "tooltip": "Techniques and tools for collecting, preserving, and analyzing digital evidence from systems and networks.",
+    "domainId": "OPS",
+    "subdomainColor": "--opsbluelt",
+    "gridRowStart": 2,
+    "gridRowSpan": 26,
+    "gridColumnStart": 3,
+    "gridColumnSpan": 2
+  },
+  {
+    "subdomainId": "OPS_incidentHandling",
+    "subdomainShortName": "Incident Handling",
+    "subdomainLongName": "Incident Detection & Response",
+    "tooltip": "Processes, tools, and methodologies for identifying, analyzing, and responding to cybersecurity incidents.",
+    "domainId": "OPS",
+    "subdomainColor": "--opsbluelt",
+    "gridRowStart": 2,
+    "gridRowSpan": 26,
+    "gridColumnStart": 5,
+    "gridColumnSpan": 2
+  },
+  {
+    "subdomainId": "OPS_penTesting",
+    "subdomainShortName": "Penetration Testing",
+    "subdomainLongName": "Penetration Testing",
+    "tooltip": "Offensive security testing to identify vulnerabilities through simulated cyberattacks and red team exercises.",
+    "domainId": "OPS",
+    "subdomainColor": "--opslt",
+    "gridRowStart": 2,
+    "gridRowSpan": 26,
+    "gridColumnStart": 7,
+    "gridColumnSpan": 5
+  },
+  {
+    "subdomainId": "OPS_exploitation",
+    "subdomainShortName": "Exploitation",
+    "subdomainLongName": "Exploitation Development",
+    "tooltip": "Developing and using exploits to test the resilience and security of applications and systems.",
+    "domainId": "OPS",
+    "subdomainColor": "--opslt",
+    "gridRowStart": 2,
+    "gridRowSpan": 26,
+    "gridColumnStart": 12,
+    "gridColumnSpan": 2
+  }
+];
+
+            unspecialized = [
+  {
+    "unSpecializedId": "unspec_NET",
+    "domainId": "NET",
+    "gridRowStart": 2,
+    "gridRowSpan": 27,
+    "gridColumnStart": 1,
+    "gridColumnSpan": 3
+  },
+  {
+    "unSpecializedId": "unspec_IAM",
+    "domainId": "IAM",
+    "gridRowStart": 2,
+    "gridRowSpan": 27,
+    "gridColumnStart": 1,
+    "gridColumnSpan": 1
+  },
+  {
+    "unSpecializedId": "unspec_ENG",
+    "domainId": "ENG",
+    "gridRowStart": 2,
+    "gridRowSpan": 27,
+    "gridColumnStart": 7,
+    "gridColumnSpan": 1
+  },
+  {
+    "unSpecializedId": "unspec_AST",
+    "domainId": "AST",
+    "gridRowStart": 2,
+    "gridRowSpan": 27,
+    "gridColumnStart": 1,
+    "gridColumnSpan": 2
+  },
+  {
+    "unSpecializedId": "unspec_RSK_L",
+    "domainId": "RSK",
+    "gridRowStart": 2,
+    "gridRowSpan": 27,
+    "gridColumnStart": 1,
+    "gridColumnSpan": 3
+  },
+  {
+    "unSpecializedId": "unspec_RSK_R",
+    "domainId": "RSK",
+    "gridRowStart": 2,
+    "gridRowSpan": 27,
+    "gridColumnStart": 8,
+    "gridColumnSpan": 2
+  },
+  {
+    "unSpecializedId": "unspec_TST",
+    "domainId": "TST",
+    "gridRowStart": 2,
+    "gridRowSpan": 27,
+    "gridColumnStart": 1,
+    "gridColumnSpan": 3
+  },
+  {
+    "unSpecializedId": "unspec_SOF",
+    "domainId": "SOF",
+    "gridRowStart": 2,
+    "gridRowSpan": 27,
+    "gridColumnStart": 1,
+    "gridColumnSpan": 1
+  },
+  {
+    "unSpecializedId": "unspec_OPS",
+    "domainId": "OPS",
+    "gridRowStart": 2,
+    "gridRowSpan": 27,
+    "gridColumnStart": 1,
+    "gridColumnSpan": 2
+  }
+];
+
+            // Get a subset of certs for initial rendering
+            certs = window.certs || [];
+            
+            // Validate data
+            validateData();
+            
+            // Render the grid
+            renderGrid();
+            
+            // Set up event listeners
+            setupEventListeners();
+        }
+        
+        function validateData() {
+            // Check for duplicate certIds
+            const certIds = new Set();
+            certs.forEach(cert => {
+                if (certIds.has(cert.certId)) {
+                    console.error(`Duplicate certId found: ${cert.certId}`);
+                }
+                certIds.add(cert.certId);
+            });
+            
+            // Add isInSubdomain flag for certs if not present
+            certs.forEach(cert => {
+                if (cert.isInSubdomain === undefined) {
+                    cert.isInSubdomain = cert.subdomainId !== null && cert.subdomainId !== undefined;
+                }
+            });
+            
+            // Check for domain layout consistency
+            domains.forEach(domain => {
+                let totalSpanUsed = 0;
+                
+                subdomains.filter(s => s.domainId === domain.domainId)
+                    .forEach(subdomain => totalSpanUsed += subdomain.gridColumnSpan);
+                
+                unspecialized.filter(u => u.domainId === domain.domainId)
+                    .forEach(unspec => totalSpanUsed += unspec.gridColumnSpan);
+                
+                if (totalSpanUsed > domain.gridColumnSpan) {
+                    console.error(`Domain layout exceeds allowed gridColumnSpan for ${domain.domainId}`);
+                }
+            });
+            
+            // Check for subdomain linking
+            certs.forEach(cert => {
+                if (cert.subdomainId) {
+                    const subdomain = subdomains.find(s => s.subdomainId === cert.subdomainId);
+                    if (!subdomain) {
+                        console.error(`Subdomain not found: ${cert.subdomainId} for cert ${cert.certId}`);
+                    } else if (subdomain.domainId !== cert.domainId) {
+                        console.error(`Domain mismatch: cert ${cert.certId} has domain ${cert.domainId} but subdomain ${cert.subdomainId} has domain ${subdomain.domainId}`);
+                    }
+                } else {
+                    const unspec = unspecialized.find(u => u.domainId === cert.domainId);
+                    if (!unspec) {
+                        console.error(`No unspecialized container found for cert ${cert.certId} with domain ${cert.domainId}`);
+                    }
+                }
+            });
+        }
+        
+        function renderGrid() {
+            // Clear the grid container
+            gridContainer.innerHTML = '';
+            
+            // Sort domains by display order
+            const sortedDomains = [...domains].sort((a, b) => a.domainDisplayOrder - b.domainDisplayOrder);
+            
+            // Calculate total grid columns
+            const totalColumns = domains.reduce((sum, domain) => sum + domain.gridColumnSpan, 0);
+            gridContainer.style.gridTemplateColumns = `repeat(${totalColumns}, var(--grid-cell-width))`;
+            
+            // Create stratum labels
+            stratumLabels.innerHTML = '';
+            for (let i = 2; i <= 28; i++) {
+                const label = document.createElement('div');
+                label.className = 'stratum-label';
+                label.textContent = i - 1;
+                stratumLabels.appendChild(label);
+            }
+            
+            // Create legend
+            legend.innerHTML = '';
+            sortedDomains.forEach(domain => {
+                // Default team color
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                
+                const colorBox = document.createElement('div');
+                colorBox.className = 'legend-color';
+                colorBox.style.backgroundColor = `var(${getDomainColor(domain.domainId)})`;
+                
+                const label = document.createElement('span');
+                label.textContent = domain.domainShortName;
+                
+                legendItem.appendChild(colorBox);
+                legendItem.appendChild(label);
+                legend.appendChild(legendItem);
+                
+                // Add team role colors if available
+                Object.entries(domain.teamRoles || {}).forEach(([teamRole, config]) => {
+                    if (teamRole !== 'DefaultTeam' && config.tileColor) {
+                        const teamLegendItem = document.createElement('div');
+                        teamLegendItem.className = 'legend-item';
+                        
+                        const teamColorBox = document.createElement('div');
+                        teamColorBox.className = 'legend-color';
+                        teamColorBox.style.backgroundColor = `var(${config.tileColor})`;
+                        
+                        const teamLabel = document.createElement('span');
+                        teamLabel.textContent = `${domain.domainShortName} (${teamRole.replace('Team', '')})`;
+                        
+                        teamLegendItem.appendChild(teamColorBox);
+                        teamLegendItem.appendChild(teamLabel);
+                        legend.appendChild(teamLegendItem);
+                    }
+                });
+            });
+            
+            // Create domain filters
+            domainFilters.innerHTML = '';
+            sortedDomains.forEach(domain => {
+                const filterBtn = document.createElement('button');
+                filterBtn.className = 'filter-btn';
+                filterBtn.textContent = domain.domainShortName;
+                filterBtn.dataset.filter = 'domain';
+                filterBtn.dataset.value = domain.domainId;
+                domainFilters.appendChild(filterBtn);
